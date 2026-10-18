@@ -3,11 +3,6 @@
 Fase 1: templates baseados em prioridade e problemas detectados.
 Fase futura: personalização por segmento, dados de mercado, histórico.
 """
-from __future__ import annotations
-
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from core.entities import Lead, Research, Score, Opportunity, Priority, NextAction
 
 # Templates de hipótese por problema.
@@ -57,6 +52,5 @@ def _classify(score_geral: float) -> Priority:
 def _build_hipotese(problemas: list[str]) -> str:
     if not problemas:
         return "Lead com presença digital sólida; oportunidade para aprofundamento de relacionamento."
-    # Combina os dois primeiros problemas na hipótese.
     parts = [HYPOTHESE_TEMPLATES.get(p, f"Problema detectado: {p}") for p in problemas[:2]]
     return " ".join(parts)

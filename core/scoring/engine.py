@@ -6,19 +6,8 @@ Responsabilidades:
 
 Sem dependências externas. Evolui: pesos por segmento via config.
 """
-from __future__ import annotations
-
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from core.entities import Score, Priority
-
-# Faixas de prioridade. Evoluir para config por segmento/tamanho de empresa.
-THRESHOLDS: dict[str, float] = {
-    "high": 0.70,
-    "medium": 0.45,
-    # < medium => LOW; sem sinais => DESCARTADO (tratado no qualify)
-}
+from core.config import CONFIG
 
 
 def clamp(v: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -39,9 +28,9 @@ def compute_score_geral(dimensoes: dict[str, float], pesos: dict[str, float]) ->
 
 
 def classify_prioridade(score_geral: float) -> Priority:
-    if score_geral >= THRESHOLDS["high"]:
+    if score_geral >= CONFIG.scoring.threshold_high:
         return Priority.HIGH
-    if score_geral >= THRESHOLDS["medium"]:
+    if score_geral >= CONFIG.scoring.threshold_medium:
         return Priority.MEDIUM
     return Priority.LOW
 

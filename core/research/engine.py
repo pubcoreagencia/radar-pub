@@ -1,10 +1,8 @@
 """Módulo de pesquisa — coleta presença digital e sinais de um lead.
 
-Fase 1: heurísticas baseadas no lead (website, redes sociais).
+Fase 1: usa heurísticas baseadas no lead (website, redes sociais).
 Fase futura: browser automation, APIs, SEO tools.
 """
-from __future__ import annotations
-
 from core.entities import Lead, Research, Evidence, DigitalPresence
 
 

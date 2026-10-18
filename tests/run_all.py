@@ -11,6 +11,8 @@ test_files = [
     "tests/test_entities.py",
     "tests/test_scoring.py",
     "tests/test_pipeline.py",
+    "tests/test_edge_cases.py",
+    "tests/test_config.py",
 ]
 
 for tf in test_files:

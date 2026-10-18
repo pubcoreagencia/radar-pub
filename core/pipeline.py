@@ -2,11 +2,6 @@
 
 Orquestra os módulos em um fluxo simples. Cada etapa é um agente.
 """
-from __future__ import annotations
-
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from core.entities import Lead, Research, Score, Opportunity
 from core.discovery.engine import discover, discover_one
 from core.research.engine import research_lead

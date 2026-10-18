@@ -1,26 +1,30 @@
 # RADAR PUB
 
-## Visão Geral
+**Business Intelligence + Opportunity Intelligence Engine** para a PUB Holding.
 
-O Radar PUB é uma infraestrutura autônoma de prospecção comercial 24/7 para a PUB Holding. Uma máquina que continuamente descobre, pesquisa, qualifica e pontua oportunidades de negócios, gerando hipóteses acionáveis.
+Infraestrutura autônoma de prospecção comercial 24/7: descobre, pesquisa, analisa, pontua e gera hipóteses de oportunidade para empresas potenciais.
+
+## Problema que resolve
+
+A PUB Holding precisa identificar continuamente **quais empresas representam uma oportunidade comercial e por quê**. O Radar PUB constrói essa inteligência de forma autônoma, preparada para operar 24/7 via Hermes (orquestrador) e PDL/Harness (execução).
 
 ## Arquitetura
 
-**RADAR PUB → business intelligence + opportunity engine**
+```
+PUB Holding
+     ↓
+RADAR PUB (intelligence engine: Discovery → Research → Analysis → Scoring → Opportunity)
+     ↓
+Hermes (operador/orquestrador externo)
+     ↓
+PDL/Harness (futuro executor)
+     ↓
+Agentes + Ferramentas + Execução + Memória
+```
 
----
+Detalhes em [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
-**Hermes** (o orchestrator externo)
-
----
-
-**PDL/Harness** (futuro executor)
-
----
-
-**Agentes + Ferramentas + Execução**
-
-## Fluxo Principal do MVP
+## Fluxo Principal
 
 ```mermaid
 graph LR
@@ -30,86 +34,85 @@ graph LR
     D --> E[Opportunity]
 ```
 
-## Componentes Principais
-
-- **Domínios** (entidades de negócios centrais): lead, research, score, opportunity
-- **Módulos** (onde a lógica de negócios vive):
-  - `core/discovery` - descoberta de leads
-  - `core/research` - pesquisa de presença digital
-  - `core/qualification` - qualificação de leads
-  - `core/scoring` - pontuação baseada em critérios
-  - `core/outreach` - preparação de abordagem (espaço reservado)
-  - `core/followup` - preparação de follow-up (espaço reservado)
-  - `core/memory` - histórico de decisões e aprendizado
-- **Agentes** (dispositivos de processamento autônomos):
-  - `agents/scout` - descobridor de leads
-  - `agents/researcher` - pesquisador digital
-  - `agents/analyst` - analista de dados
-  - `agents/qualifier` - qualificador de oportunidades
-  - `agents/outreach` - preparador de abordagem (espaço reservado)
-  - `agents/followup` - preparador de follow-up (espaço reservado)
-
-## Estrutura de Dados
-
-### Lead
-```json
-{
-  "empresa": "Nome da Empresa",
-  "segmento": "SETOR",
-  "localizacao": "CIDADE, PAÍS",
-  "website": "https://example.com",
-  "redes_sociais": ["linkedin", "twitter"]
-}
-```
-
-### Research
-```json
-{
-  "presenca_digital": "ALTA|MEDIA|BAIXA",
-  "sinais_encontrados": ["website", "seo"],
-  "problemas_detectados": ["falta_de_conversao"],
-  "evidencias": []
-}
-```
-
-### Score
-```json
-{
-  "seo": 0.8,
-  "website": 0.9,
-  "social": 0.7,
-  "tracking": 0.6,
-  "conversion": 0.5,
-  "commercial_potential": 0.8,
-  "pontuacao_geral": 0.73,
-  "prioridade": "ALTA|MEDIA|BAIXA",
-  "hipotese": "TEXTO_DE_HIPOTESE",
-  "motivo": "TEXTO_DO_MOTIVO",
-  "proxima_acao": "CONTATO|EMAIL|MARKETING"
-}
-```
-
-## Como Executar Localmente
+## Instalação
 
 ```bash
-# Executar pipeline completo
+git clone https://github.com/pubcoreagencia/radar-pub.git
+cd radar-pub
+```
+
+Sem dependências externas no MVP — apenas Python ≥ 3.11 stdlib.
+
+## Execução
+
+```bash
+# Pipeline completo (3 leads mockados)
 python scripts/run_mvp.py
 
-# Executar lead específico
+# Lead específico
 python scripts/demo.py Acme
 
-# Executar todos os testes
+# Todos os testes (22 testes)
 python tests/run_all.py
+```
+
+## Estado Atual
+
+**Fase 1 — Foundation (completa)**
+
+- Pipeline vertical funcional: Discovery → Research → Scoring → Opportunity
+- Domínio isolado: `Lead`, `Research`, `Score`, `Opportunity`, `DecisionRecord`
+- Configuração centralizada: pesos de scoring e thresholds em `core/config.py`
+- Abstração de fontes: `DiscoverySource` interface (MockSource implementado)
+- Interfaces de integração: `integrations/hermes/`, `integrations/pdl/`
+- 22 testes passando (entities, scoring, pipeline, edge cases, config)
+- Dados 100% mockados/fixtures — nenhuma fonte real ainda
+
+## Limitações
+
+- **Dados mockados**: nenhuma fonte real implementada (web, maps, social)
+- **Análise simplificada**: heurísticas básicas baseadas em website/redes sociais
+- **Sem persistência**: memória volátil (perdida entre execuções)
+- **Sem execução contínua**: roda uma vez, não é um loop 24/7
+- **Sem LLMs**: scoring baseado em regras, não aprendizado
+- **Sem outreach real**: apenas preparação de hipótese
+
+## Score Explicável
+
+O score geral é a soma ponderada das dimensões (pesos em `core/config.py`):
+
+| Dimensão | Peso | Origem (MVP) |
+|---|---|---|
+| SEO | 0.20 | proxy via website |
+| Website | 0.25 | presença de website |
+| Social | 0.15 | presença de redes sociais |
+| Tracking | 0.10 | placeholder |
+| Conversion | 0.15 | placeholder |
+| Commercial Potential | 0.15 | placeholder |
+
+Prioridade: `score ≥ 0.70 → ALTA`, `≥ 0.45 → MEDIA`, `< 0.45 → BAIXA`.
+
+## Roadmap
+
+Ver [`ROADMAP.md`](./ROADMAP.md) — 8 fases: Foundation → Intelligence → Real Discovery → Continuous Execution → Hermes Integration → PDL Integration → Autonomous Prospecting → Learning Loop.
+
+## Estrutura
+
+```
+core/           # motor de inteligência (entities, config, pipeline, módulos)
+agents/         # dispositivos de processamento (futuro)
+integrations/   # interfaces Hermes/PDL
+tests/          # testes (entities, scoring, pipeline, edge cases, config)
+scripts/        # run_mvp.py, demo.py
+docs/           # concepts, workflows, decisions (ADRs)
 ```
 
 ## Documentação
 
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) - arquitetura e design
-- [`ROADMAP.md`](./ROADMAP.md) - roadmap do projeto
-- [docs/conceitos](./docs/concepts/) - conceitos e fundamentos
-- [docs/workflows](./docs/workflows/) - fluxos de trabalho
-- [docs/decisions](./docs/decisions/) - decisões de design
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — camadas e decisões
+- [`ROADMAP.md`](./ROADMAP.md) — 8 fases
+- [`docs/decisions/`](./docs/decisions/) — ADRs
 
 ## Licença
 
-Proprietary
+Proprietary — PUB Holding.

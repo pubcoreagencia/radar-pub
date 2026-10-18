@@ -3,9 +3,6 @@
 Permite iniciar pipeline, executar em modo rápido e ver resultado em terminal.
 """
 import sys, os, json
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from core.pipeline import Pipeline
 
 

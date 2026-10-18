@@ -3,11 +3,6 @@
 Fase 1: registry em memória (volatile).
 Fase futura: persistência em Turso/SQLite, feedback comercial, learning loop.
 """
-from __future__ import annotations
-
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from core.entities import DecisionRecord, Lead, Research, Score, Opportunity
 
 
