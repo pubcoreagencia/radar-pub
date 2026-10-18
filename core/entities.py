@@ -117,6 +117,26 @@ class Research:
 
 
 # ---------------------------------------------------------------------------
+# Analysis — forças, fraquezas, oportunidades, hipóteses
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Analysis:
+    """Análise de um lead: strengths, weaknesses, opportunities, hypotheses."""
+    lead_id: str
+    research_id: str
+    strengths: list[str] = field(default_factory=list)
+    weaknesses: list[str] = field(default_factory=list)
+    opportunities: list[str] = field(default_factory=list)
+    hypotheses: list[str] = field(default_factory=list)
+    analysis_id: str = field(default_factory=lambda: _new_id("ana"))
+    criado_em: str = field(default_factory=_now_iso)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+# ---------------------------------------------------------------------------
 # Score — pontuação por dimensão + score geral
 # ---------------------------------------------------------------------------
 
