@@ -28,7 +28,6 @@ graph LR
     B --> C[Analysis]
     C --> D[Scoring]
     D --> E[Opportunity]
-</graph>
 ```
 
 ## Componentes Principais
@@ -39,16 +38,16 @@ graph LR
   - `core/research` - pesquisa de presença digital
   - `core/qualification` - qualificação de leads
   - `core/scoring` - pontuação baseada em critérios
-  - `core/outreach` - (espaço reservado para futuro)
-  - `core/followup` - (espaço reservado para futuro)
+  - `core/outreach` - preparação de abordagem (espaço reservado)
+  - `core/followup` - preparação de follow-up (espaço reservado)
   - `core/memory` - histórico de decisões e aprendizado
 - **Agentes** (dispositivos de processamento autônomos):
   - `agents/scout` - descobridor de leads
   - `agents/researcher` - pesquisador digital
   - `agents/analyst` - analista de dados
   - `agents/qualifier` - qualificador de oportunidades
-  - `agents/outreach` - (espaço reservado para futuro)
-  - `agents/followup` - (espaço reservado para futuro)
+  - `agents/outreach` - preparador de abordagem (espaço reservado)
+  - `agents/followup` - preparador de follow-up (espaço reservado)
 
 ## Estrutura de Dados
 
@@ -93,14 +92,14 @@ graph LR
 ## Como Executar Localmente
 
 ```bash
-# Instale dependências (se necessário)
-# npm install ou python -m pip install -r requirements.txt
+# Executar pipeline completo
+python scripts/run_mvp.py
 
-# Execute o radar
-# node apps/radar/src/index.js
+# Executar lead específico
+python scripts/demo.py Acme
 
-# Ou via docker (futuro)
-# docker-compose up
+# Executar todos os testes
+python tests/run_all.py
 ```
 
 ## Documentação
