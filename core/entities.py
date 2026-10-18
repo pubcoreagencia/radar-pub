@@ -78,7 +78,7 @@ class Lead:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
-        d["status"] = self.status.value
+        d["status"] = self.status.value if isinstance(self.status, LeadStatus) else self.status
         return d
 
 

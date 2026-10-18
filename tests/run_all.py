@@ -6,13 +6,18 @@ import sys, os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Importa e executa cada arquivo de teste
+# Executa cada arquivo de teste
 test_files = [
     "tests/test_entities.py",
     "tests/test_scoring.py",
     "tests/test_pipeline.py",
     "tests/test_edge_cases.py",
     "tests/test_config.py",
+    "tests/test_explainability.py",
+    "tests/test_opportunity.py",
+    "tests/test_persistence.py",
+    "tests/test_outreach.py",
+    "tests/test_daemon_api.py",
 ]
 
 for tf in test_files:
