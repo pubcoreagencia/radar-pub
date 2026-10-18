@@ -142,12 +142,15 @@ class Analysis:
 
 # Pesos do score geral. Somam 1.0. Evoluível: viram config por segmento.
 DEFAULT_WEIGHTS: dict[str, float] = {
-    "seo": 0.20,
-    "website": 0.25,
-    "social": 0.15,
-    "tracking": 0.10,
-    "conversion": 0.15,
-    "commercial_potential": 0.15,
+    "seo": 0.12,
+    "website": 0.15,
+    "social": 0.10,
+    "tracking": 0.08,
+    "conversion": 0.10,
+    "commercial_potential": 0.10,
+    "capability_fit": 0.15,
+    "commercial_fit": 0.12,
+    "confidence": 0.08,
 }
 
 
@@ -166,12 +169,13 @@ class Score:
 
 
 # ---------------------------------------------------------------------------
-# Opportunity — hipótese, prioridade, próxima ação
+# Opportunity — hipótese, prioridade, próxima ação + campos de capability fit
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class Opportunity:
-    """Resultado final: o quão boa é a oportunidade e por quê."""
+    """Resultado final: o quão boa é a oportunidade e por quê.
+    Inclui dimensões de capability fit para scoring completo."""
     lead_id: str
     score_id: str
     score_geral: float = 0.0
@@ -180,6 +184,14 @@ class Opportunity:
     motivo: str = ""
     proxima_acao: NextAction = NextAction.NURTURE
     opportunity_id: str = field(default_factory=lambda: _new_id("opp"))
+    capability_fit: float = 0.0
+    commercial_fit: float = 0.0
+    confidence: float = 0.0
+    # Sprint 2 FASE 4: dimensões de inteligência de oportunidade
+    delivery_feasibility: float = 0.5
+    revenue_potential: float = 0.5
+    expansion_potential: float = 0.5
+    urgency: float = 0.5
     criado_em: str = field(default_factory=_now_iso)
 
     def to_dict(self) -> dict[str, Any]:

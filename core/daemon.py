@@ -8,6 +8,7 @@ from __future__ import annotations
 import signal
 import time
 import json
+import threading
 from datetime import datetime
 
 from core.entities import LeadStatus
@@ -39,24 +40,23 @@ class RadarDaemon:
         self.discovery_interval = discovery_interval
         self.research_interval = research_interval
         self.qualification_interval = qualification_interval
-        self._running = False
+        self._shutdown_event = threading.Event()
         self._last_discovery = 0.0
         self._last_research = 0.0
         self._last_qualification = 0.0
 
     def start(self) -> None:
         """Inicia o daemon 24/7."""
-        self._running = True
+        self._shutdown_event.clear()
         log_event("daemon_started", discovery_interval=self.discovery_interval,
                   research_interval=self.research_interval,
                   qualification_interval=self.qualification_interval)
 
-        # Registra handlers de shutdown
         signal.signal(signal.SIGINT, self._handle_shutdown)
         signal.signal(signal.SIGTERM, self._handle_shutdown)
 
         log_event("daemon_running")
-        while self._running:
+        while not self._shutdown_event.is_set():
             now = time.time()
             try:
                 if now - self._last_discovery >= self.discovery_interval:
@@ -74,13 +74,13 @@ class RadarDaemon:
 
     def stop(self) -> None:
         """Para o daemon graciosamente."""
-        self._running = False
+        self._shutdown_event.set()
         log_event("daemon_stopped")
         self.db.close()
 
     def _handle_shutdown(self, signum, frame) -> None:
         log_event("daemon_shutdown_signal", signal=signum)
-        self.stop()
+        self._shutdown_event.set()
 
     def _discovery_loop(self) -> None:
         log_event("discovery_loop_started")
@@ -118,10 +118,7 @@ class RadarDaemon:
         leads = self.db.get_leads()
         for lead_row in leads:
             try:
-                from core.entities import Lead, Score, Opportunity
-                from core.research.engine import research_lead
-                from core.analysis.engine import analyze
-                from core.qualification.engine import qualify
+                from core.entities import Lead
                 lead = Lead(
                     lead_id=lead_row["lead_id"],
                     empresa=lead_row["empresa"],
@@ -133,11 +130,18 @@ class RadarDaemon:
                     status=LeadStatus(lead_row["status"]),
                     criado_em=lead_row["criado_em"],
                 )
-                research = research_lead(lead)
-                analysis = analyze(lead, research)
-                opp = qualify(lead, research, analysis)
-                self.db.save_analysis(analysis)
-                self.db.save_opportunity(opp)
+                # Usa o pipeline completo para garantir o Score Único
+                # com capability_fit / commercial_fit / confidence.
+                result = self.pipeline.run_lead(lead)
+                # DELETE antes de INSERT OR REPLACE para evitar acumulação
+                # (tabelas têm UNIQUE(lead_id); INSERT OR REPLACE só substitui
+                #  por PK, não por UNIQUE secundário).
+                self.db.conn.execute("DELETE FROM scores WHERE lead_id = ?", (lead.lead_id,))
+                self.db.conn.execute("DELETE FROM opportunities WHERE lead_id = ?", (lead.lead_id,))
+                self.db.conn.commit()
+                self.db.save_analysis(result["analysis"])
+                self.db.save_score(result["score"])
+                self.db.save_opportunity(result["opportunity"])
             except Exception as e:
                 log_event("qualification_loop_error", lead_id=lead_row.get("lead_id"), error=str(e))
         log_event("qualification_loop_completed", leads_qualified=len(leads))

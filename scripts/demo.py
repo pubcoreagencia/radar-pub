@@ -1,43 +1,80 @@
-"""Scripts de ajuda para execução de demo do radar-pub MVP.
+#!/usr/bin/env python3
+"""Demo run of Radar PUB pipeline with capability-fit scoring.
 
-Permite iniciar pipeline, executar em modo rápido e ver resultado em terminal.
+Executes the full pipeline (Discovery -> Research -> Analysis -> Scoring -> Opportunity)
+for each lead fixture and prints:
+- company name, pipeline score, capability_fit, commercial_fit, confidence
+- matches for this lead (capability_id, problem, offers)
 """
-import sys, os, json
+import sys
+import os
+
+# project root on Windows path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from core.pipeline import Pipeline
 
 
-def demo_run() -> None:
-    pipe = Pipeline()
-    print("[DEMO] Executando pipeline completo...")
-    resultados = pipe.run()
-    print(f"[DEMO] Processados {len(resultados)} leads.")
-    for r in resultados:
-        lead = r['lead']
-        op = r['opportunity']
-        print(f"[DEMO] {lead['empresa']} => {op['prioridade']} => {op['hipotese']}")
-
-
-def demo_lead(empresa: str) -> None:
-    from core.discovery.engine import discover
-    pipe = Pipeline()
-    for lead in discover():
-        if empresa.lower() in lead.empresa.lower():
-            print(f"[DEMO] Lead selecionado: {lead.empresa}")
-            print(json.dumps(pipe.run_lead(lead), indent=2, ensure_ascii=False))
-            return
-    print(f"[DEMO] Nenhum lead encontrado com '{empresa}'")
-
-
 def main() -> None:
-    if len(sys.argv) > 1:
-        if sys.argv[1] == 'run':
-            demo_run()
-        else:
-            demo_lead(sys.argv[1])
-    else:
-        print("Uso:")
-        print("  python scripts/demo.py run     # executar todos os leads")
-        print("  python scripts/demo.py <empresa>  # executar lead específico")
+    pipeline = Pipeline()
+    results = pipeline.run()
+
+    if not results:
+        print("Nenhum lead processado.")
+        return
+
+    print(f"=== DEMO — {len(results)} leads ===\n")
+    for i, r in enumerate(results, 1):
+        lead = r["lead"]
+        empresa = lead["empresa"]
+        opportunity = r["opportunity"]
+        score = r["score"]
+        analysis = r["analysis"]
+
+        print(f"{i}. Empresa: {empresa}")
+        print(f"   Score Geral: {opportunity['score_geral']:.3f}")
+        print(f"   Capability Fit: {score['dimensoes'].get('capability_fit', 0):.2f}")
+        print(f"   Commercial Fit: {score['dimensoes'].get('commercial_fit', 0):.2f}")
+        print(f"   Confidence: {score['dimensoes'].get('confidence', 0):.2f}")
+        print(f"   Prioridade: {opportunity['prioridade']}")
+        print(f"   Hipótese: {opportunity['hipotese']}")
+
+        # Reconstruir analysis para matcher
+        from core.entities import Lead, Research, Analysis
+        lead_obj = Lead(
+            empresa=empresa,
+            segmento=lead.get("segmento", ""),
+            localizacao=lead.get("localizacao", ""),
+            website=lead.get("website"),
+            redes_sociais=lead.get("redes_sociais", []),
+            fonte=lead.get("fonte", "unknown"),
+            lead_id=lead.get("lead_id", ""),
+        )
+        research_obj = Research(
+            lead_id=lead_obj.lead_id,
+            presenca_digital=analysis.get("presenca_digital", "AUSENTE"),
+            sinais_encontrados=analysis.get("sinais_encontrados", []),
+            problemas_detectados=analysis.get("problemas_detectados", []),
+            research_id=analysis.get("research_id", ""),
+        )
+        analysis_obj = Analysis(
+            lead_id=analysis["lead_id"],
+            research_id=analysis["research_id"],
+            strengths=analysis.get("strengths", []),
+            weaknesses=analysis.get("weaknesses", []),
+            opportunities=analysis.get("opportunities", []),
+            hypotheses=analysis.get("hypotheses", []),
+            analysis_id=analysis.get("analysis_id", ""),
+        )
+
+        from core.capabilities.capability_matcher import match_capabilities
+        matches = match_capabilities(lead_obj, research_obj, analysis_obj)
+        print(f"   Matches de capabilities: {len(matches)}")
+        for m in matches:
+            offers = m.offers
+            offers_str = f" ({len(offers)} ofertas)" if offers else ""
+            print(f"      - {m.capability_id} ({m.fit_level}, conf={m.confidence:.2f}) problem={m.problem}{offers_str}")
+        print()
 
 
 if __name__ == "__main__":

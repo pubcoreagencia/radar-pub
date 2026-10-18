@@ -78,7 +78,8 @@ class Database:
             dimensoes TEXT,
             pesos TEXT,
             score_geral REAL,
-            criado_em TEXT
+            criado_em TEXT,
+            UNIQUE(lead_id)
         );
         CREATE TABLE IF NOT EXISTS opportunities (
             opportunity_id TEXT PRIMARY KEY,
@@ -89,7 +90,11 @@ class Database:
             hipotese TEXT,
             motivo TEXT,
             proxima_acao TEXT,
-            criado_em TEXT
+            capability_fit REAL,
+            commercial_fit REAL,
+            confidence REAL,
+            criado_em TEXT,
+            UNIQUE(lead_id)
         );
         CREATE TABLE IF NOT EXISTS decisions (
             decision_id TEXT PRIMARY KEY,
@@ -100,6 +105,31 @@ class Database:
         );
         """)
         self.conn.commit()
+        # Migration: adiciona colunas de capability fit em bancos antigos
+        self._migrate_add_columns("opportunities", [
+            "capability_fit REAL", "commercial_fit REAL", "confidence REAL",
+        ])
+
+    def _migrate_add_columns(self, table: str, columns: list[str]) -> None:
+        """Adiciona colunas ausentes (idempotente) em tabelas de bancos antigos.
+
+        ALTER TABLE ADD COLUMN falha se a coluna já existe; por isso inspeciona
+        o schema atual e só adiciona o que faltar. Evita quebrar bancos
+        criados antes do Sprint 2 (sem capability_fit/commercial_fit/confidence).
+        """
+        cur = self.conn.cursor()
+        cur.execute(f"PRAGMA table_info({table})")
+        existing = {row["name"] for row in cur.fetchall()}
+        for col_def in columns:
+            col_name = col_def.split()[0]
+            if col_name not in existing:
+                try:
+                    cur.execute(f"ALTER TABLE {table} ADD COLUMN {col_def}")
+                except sqlite3.OperationalError:
+                    # Coluna já existe (criada por outro caminho) — ignora.
+                    pass
+        self.conn.commit()
+
 
     def save_lead(self, lead: Lead | dict) -> None:
         d = lead.to_dict() if hasattr(lead, "to_dict") else lead
@@ -160,24 +190,33 @@ class Database:
     def save_opportunity(self, opportunity: Opportunity | dict) -> None:
         d = opportunity.to_dict() if hasattr(opportunity, "to_dict") else opportunity
         self.conn.execute("""
-            INSERT OR REPLACE INTO opportunities (opportunity_id, lead_id, score_id, score_geral, prioridade, hipotese, motivo, proxima_acao, criado_em)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO opportunities (opportunity_id, lead_id, score_id, score_geral, prioridade, hipotese, motivo, proxima_acao, capability_fit, commercial_fit, confidence, criado_em)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             d["opportunity_id"], d["lead_id"], d["score_id"],
             d.get("score_geral"), _val(d.get("prioridade")),
             d.get("hipotese"), d.get("motivo"),
-            _val(d.get("proxima_acao")), d.get("criado_em"),
+            _val(d.get("proxima_acao")),
+            d.get("capability_fit"), d.get("commercial_fit"), d.get("confidence"),
+            d.get("criado_em"),
         ))
         self.conn.commit()
 
     def save_decision(self, decision: DecisionRecord | dict) -> None:
         d = decision.to_dict() if hasattr(decision, "to_dict") else decision
+        # DecisionRecord fields: etapa, decisao, justificativa (not decision_type/payload)
         self.conn.execute("""
             INSERT OR REPLACE INTO decisions (decision_id, lead_id, decision_type, payload, criado_em)
             VALUES (?, ?, ?, ?, ?)
         """, (
-            d["decision_id"], d.get("lead_id"), d.get("decision_type"),
-            json.dumps(d.get("payload", {})), d.get("criado_em"),
+            d["decision_id"], d.get("lead_id"),
+            d.get("etapa", d.get("decision_type", "")),
+            json.dumps({
+                "decisao": d.get("decisao", ""),
+                "justificativa": d.get("justificativa", ""),
+                **d.get("payload", {}),
+            }),
+            d.get("criado_em"),
         ))
         self.conn.commit()
 
