@@ -18,6 +18,8 @@ test_files = [
     "tests/test_persistence.py",
     "tests/test_outreach.py",
     "tests/test_daemon_api.py",
+    "tests/test_capabilities.py",
+    "tests/test_regression_sprint2.py",
 ]
 
 for tf in test_files:
