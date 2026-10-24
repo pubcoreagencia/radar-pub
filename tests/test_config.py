@@ -6,13 +6,16 @@ from core.config import CONFIG, ScoringConfig, RadarConfig, update_config
 
 
 def test_default_weights():
-    assert CONFIG.scoring.weights["seo"] == 0.20
-    assert CONFIG.scoring.weights["website"] == 0.25
-    assert CONFIG.scoring.weights["social"] == 0.15
-    assert CONFIG.scoring.weights["tracking"] == 0.10
-    assert CONFIG.scoring.weights["conversion"] == 0.15
-    assert CONFIG.scoring.weights["commercial_potential"] == 0.15
-    print("✓ Default weights")
+    assert CONFIG.scoring.weights["seo"] == 0.12
+    assert CONFIG.scoring.weights["website"] == 0.15
+    assert CONFIG.scoring.weights["social"] == 0.10
+    assert CONFIG.scoring.weights["tracking"] == 0.08
+    assert CONFIG.scoring.weights["conversion"] == 0.10
+    assert CONFIG.scoring.weights["commercial_potential"] == 0.10
+    assert CONFIG.scoring.weights["capability_fit"] == 0.15
+    assert CONFIG.scoring.weights["commercial_fit"] == 0.12
+    assert CONFIG.scoring.weights["confidence"] == 0.08
+    print("✓ Default weights (9 dimensões)")
 
 
 def test_total_weight():
@@ -24,12 +27,13 @@ def test_total_weight():
 def test_thresholds():
     assert CONFIG.scoring.threshold_high == 0.70
     assert CONFIG.scoring.threshold_medium == 0.45
+    assert CONFIG.scoring.threshold_low == 0.25
     print("✓ Thresholds")
 
 
 def test_get_weight():
     w = CONFIG.scoring.get_weight("seo")
-    assert w == 0.20
+    assert w == 0.12
     print("✓ get_weight")
 
 
@@ -38,4 +42,4 @@ if __name__ == "__main__":
     test_total_weight()
     test_thresholds()
     test_get_weight()
-    print("\n✅ Todos os testes de configuração passaram")
+    print("\n✅ Todos os testes de config passaram")

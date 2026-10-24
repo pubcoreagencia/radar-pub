@@ -37,11 +37,41 @@ class RadarAPI:
 
     def analyze(self, lead_id: str) -> dict | None:
         """Retorna análise de um lead persistido."""
-        return self.research(lead_id)
+        if not self.db:
+            return None
+        cur = self.db.conn.cursor()
+        cur.execute("SELECT * FROM analysis WHERE lead_id = ?", (lead_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {
+            "analysis_id": row["analysis_id"],
+            "lead_id": row["lead_id"],
+            "research_id": row["research_id"],
+            "strengths": json.loads(row["strengths"]),
+            "weaknesses": json.loads(row["weaknesses"]),
+            "opportunities": json.loads(row["opportunities"]),
+            "hypotheses": json.loads(row["hypotheses"]),
+            "criado_em": row["criado_em"],
+        }
 
     def score(self, lead_id: str) -> dict | None:
-        """Retorna score de um lead."""
-        return self.research(lead_id)
+        """Retorna score de um lead persistido."""
+        if not self.db:
+            return None
+        cur = self.db.conn.cursor()
+        cur.execute("SELECT * FROM scores WHERE lead_id = ?", (lead_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {
+            "score_id": row["score_id"],
+            "lead_id": row["lead_id"],
+            "dimensoes": json.loads(row["dimensoes"]),
+            "pesos": json.loads(row["pesos"]),
+            "score_geral": row["score_geral"],
+            "criado_em": row["criado_em"],
+        }
 
     def find_opportunities(self, prioridade: str | None = None) -> list[dict]:
         """Retorna oportunidades, opcionalmente filtradas por prioridade."""
